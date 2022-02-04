@@ -1,23 +1,32 @@
 import Fluent
 import Vapor
+import Fluent
 
-struct TodoController: RouteCollection {
-    func boot(routes: RoutesBuilder) throws {
-        let todos = routes.grouped("todos")
-        todos.get(use: index)
-        todos.post(use: create)
-        todos.group(":todoID") { todo in
-            todo.delete(use: delete)
+struct TodoController {
+//    func boot(routes: RoutesBuilder) throws {
+//        let todos = routes.grouped("todos")
+//        todos.get(use: index)
+//        todos.post(use: create)
+//        todos.group(":todoID") { todo in
+//            todo.delete(use: delete)
+//        }
+//    }
+
+    func index(req: Request) throws -> EventLoopFuture<[Todo]> {
+        return Todo.query(on: req.db)
+            .sort(\.$title, .ascending)
+            .all()
+    }
+    
+    func count(req: Request) throws -> EventLoopFuture<Int> {
+        return Todo.query(on: req.db).all().map { todoList -> Int in
+            todoList.count
         }
     }
 
-    func index(req: Request) throws -> EventLoopFuture<[Todo]> {
-        return Todo.query(on: req.db).all()
-    }
-
     func create(req: Request) throws -> EventLoopFuture<Todo> {
-        let todo = try req.content.decode(Todo.self)
-        return todo.save(on: req.db).map { todo }
+        let todo: Todo = try req.content.decode(Todo.self)
+        return todo.save(on: req.db).transform(to: todo)
     }
 
     func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
@@ -27,3 +36,4 @@ struct TodoController: RouteCollection {
             .transform(to: .ok)
     }
 }
+//: RouteCollection
